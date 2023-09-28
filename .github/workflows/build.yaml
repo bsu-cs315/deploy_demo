@@ -18,8 +18,9 @@ jobs:
         with:
           lfs: true
       - name: Issue 120
-        run: mkdir -p /github/home/.config/godot
-	run: cp /root/.config/godot/editor_settings-4.tres /github/home/.config/godot/
+        run: |
+	  mkdir -p /github/home/.config/godot
+          cp /root/.config/godot/editor_settings-4.tres /github/home/.config/godot/
       - name: Sanity check
         run: ls /root/.local/share/godot/templates
       - name: Setup
