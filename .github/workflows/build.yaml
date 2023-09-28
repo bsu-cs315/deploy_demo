@@ -1,47 +1,45 @@
-name: "godot-ci export"
-on: push
+# Workflow to publish Godot HTML5 games to GitHub Pages
+#
+# Make sure your project is configured for Web export to the path `build/web`.
+
+name: 'Publish to GitHub Pages'
 
 env:
-  GODOT_VERSION: 4.1.1
-  EXPORT_NAME: the_export_name
-  PROJECT_PATH: project
-  
+  GODOT_VERSION: 4.1.1 # Remember to manually set image to this version below.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
 jobs:
-  export-web:
-    name: Web Export
-    runs-on: ubuntu-20.04
+  deploy:
+    runs-on: ubuntu-latest
+
     container:
-      image: barichello/godot-ci:3.3.4
+      image: barichello/godot-ci:4.1.1
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          lfs: true
-      - name: HandleIssue
-        run: |
-          mkdir -p /github/home/.config/godot
-          cp /root/.config/godot/editor_settings-4.tres /github/home/.config/godot/
-      - name: Sanity check
-        run: ls /root/.local/share/godot/templates
-      - name: Setup
+
+      - name: Move HTML5 templates into position
         run: |
           mkdir -v -p ~/.local/share/godot/templates
           mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
-      - name: Web Build
-        run: |
-          mkdir -v -p build/web
-          cd $PROJECT_PATH
-          godot -v --headless --export-release "HTML5" ../build/web/index.html
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v1
+      - name: Create staging directory
+        run: mkdir -v -p build/web
+
+      - name: Build
+        run: godot -v --export-release --headless "HTML5" ../build/web/index.html project/project.godot
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: web
-          path: build/web
-      - name: Install rsync
-        run: |
-          apt-get update && apt-get install -y rsync
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@releases/v4
-        with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: build/web # The folder the action should deploy.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          force_orphan: true
+          user_name: 'github-ci[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Publish to gh-pages'
