@@ -34,14 +34,10 @@ jobs:
       - name: Build
         run: godot -v --export-release --headless "Web" ../build/web/index.html project/project.godot
 
-      # Workaround for SharedArrayBuffer support on GitHub Pages
-      # See: https://github.com/godotengine/godot-docs/issues/7084
-      - name: Workaround SharedArrayBuffer support
-        run: |
-          sudo apt install -y curl
-          cd build/web
-          curl -fsSL https://github.com/gzuidhof/coi-serviceworker/raw/master/coi-serviceworker.js > coi-serviceworker.js
-          sed -i 's#\(		<script src="index.js"></script>\)#		<script src="coi-serviceworker.js"></script>\n\1#g' index.html
+    - name: Add coi-service-worker
+      run: |
+        git clone https://github.com/gzuidhof/coi-serviceworker.git
+        mv coi-serviceworker/coi-serviceworker.js build/web/coi-serviceworker.js
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
